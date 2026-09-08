@@ -1,12 +1,28 @@
 # Variables
+TOOLCHAIN ?= native
+
+ifeq ($(TOOLCHAIN),native)
+CC=gcc
+AS=as
+LD=ld
+ASFLAGS=--32
+CFLAGS=-std=gnu99 -ffreestanding -O2 -Wall -Wextra -fno-builtin -fno-stack-protector -m32 -fno-pie
+LDFLAGS=-m elf_i386 -nostdlib
+LIBS=
+else
 CC=i386-elf-gcc
 AS=i386-elf-as
 LD=i386-elf-gcc
-CFLAGS=-std=gnu99 -ffreestanding -O2 -Wall -Wextra
+ASFLAGS=
+CFLAGS=-std=gnu99 -ffreestanding -O2 -Wall -Wextra -fno-builtin -fno-stack-protector
 LDFLAGS=-ffreestanding -O2 -nostdlib
+LIBS=-lgcc
+endif
 ISO_DIR=isodir
 BOOT_DIR=$(ISO_DIR)/boot
 GRUB_DIR=$(BOOT_DIR)/grub
+GRUB_MKRESCUE ?= $(shell command -v grub-mkrescue 2>/dev/null || command -v grub2-mkrescue 2>/dev/null)
+GRUB_COMPRESS ?= xz
 
 # Fichiers
 KERNEL_SRC=kernel.c
@@ -22,19 +38,20 @@ all: $(ISO)
 
 # Compilation
 $(BOOT_OBJ): $(BOOT_SRC)
-	$(AS) $(BOOT_SRC) -o $(BOOT_OBJ)
+	$(AS) $(ASFLAGS) $(BOOT_SRC) -o $(BOOT_OBJ)
 
 $(KERNEL_OBJ): $(KERNEL_SRC)
 	$(CC) -c $(KERNEL_SRC) -o $(KERNEL_OBJ) $(CFLAGS)
 
 $(KERNEL_BIN): $(BOOT_OBJ) $(KERNEL_OBJ) linker.ld
-	$(LD) -T linker.ld -o $(KERNEL_BIN) $(LDFLAGS) $(BOOT_OBJ) $(KERNEL_OBJ) -lgcc
+	$(LD) -T linker.ld -o $(KERNEL_BIN) $(LDFLAGS) $(BOOT_OBJ) $(KERNEL_OBJ) $(LIBS)
 
 $(ISO): $(KERNEL_BIN) $(GRUB_CFG)
 	mkdir -p $(GRUB_DIR)
 	cp $(KERNEL_BIN) $(BOOT_DIR)/kfs.bin
 	cp $(GRUB_CFG) $(GRUB_DIR)/grub.cfg
-	grub-mkrescue -o $(ISO) $(ISO_DIR)
+	$(GRUB_MKRESCUE) --compress=$(GRUB_COMPRESS) -o $(ISO) $(ISO_DIR)
+	rm -rf $(ISO_DIR)
 
 # Nettoyage
 clean:
