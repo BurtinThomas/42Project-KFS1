@@ -1,27 +1,27 @@
 # KFS 1
 
-Kernel minimal bootable avec GRUB, affichant `42` à l'ecran.
+Minimal bootable kernel using GRUB and displaying `42` on screen.
 
-## Compiler
+## Build
 
 ```bash
 make
 ```
 
-La compilation utilise `-ffreestanding`, `-fno-builtin` et
-`-fno-stack-protector`. Le noyau est lie directement avec `ld` et `-nostdlib`,
-donc aucune bibliotheque Linux n'est ajoutee. Les options `-fno-exception` et
-`-fno-rtti` concernent C++ ; ce projet est ecrit en C.
+The build uses `-ffreestanding`, `-fno-builtin`, and
+`-fno-stack-protector`. The kernel is linked directly with `ld` and
+`-nostdlib`, so no Linux libraries are included. The `-fno-exceptions` and
+`-fno-rtti` options apply to C++; this project is written in C.
 
-## Lancer le kernel
+## Run the kernel
 
 ```bash
 qemu-system-i386 -cdrom kfs.iso
 ```
 
-Selectionner `kfs` dans le menu GRUB.
+Select `kfs` from the GRUB menu.
 
-## Nettoyer
+## Clean the build
 
 ```bash
 make clean

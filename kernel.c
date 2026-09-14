@@ -10,13 +10,13 @@ enum vga_color {
     VGA_COLOR_LIGHT_GREY = 7
 };
 
-static inline uint8_t make_color(enum vga_color foreground,
-                                 enum vga_color background)
+static inline uint8_t compose_vga_color(enum vga_color foreground,
+                                        enum vga_color background)
 {
     return foreground | (background << 4);
 }
 
-static inline uint16_t make_entry(unsigned char character, uint8_t color)
+static inline uint16_t compose_vga_entry(unsigned char character, uint8_t color)
 {
     return (uint16_t)character | ((uint16_t)color << 8);
 }
@@ -30,19 +30,18 @@ size_t terminal_column = 0;
 uint8_t terminal_color;
 uint16_t* terminal_buffer = (uint16_t*)VGA_MEMORY;
 
-void terminal_initialize(void)
+void initialize_terminal(void)
 {
-    terminal_color = make_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK);
+    terminal_color = compose_vga_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK);
 
     for (size_t row = 0; row < VGA_HEIGHT; row++) {
         for (size_t column = 0; column < VGA_WIDTH; column++) {
             terminal_buffer[row * VGA_WIDTH + column] =
-                make_entry(' ', terminal_color);
+                compose_vga_entry(' ', terminal_color);
         }
     }
 }
-
-void terminal_putchar(char c)
+void write_terminal_character(char c)
 {
     if (c == '\n') {
         terminal_column = 0;
@@ -56,7 +55,7 @@ void terminal_putchar(char c)
     }
 
     terminal_buffer[terminal_row * VGA_WIDTH + terminal_column] =
-        make_entry(c, terminal_color);
+        compose_vga_entry(c, terminal_color);
 
     terminal_column++;
 
@@ -70,18 +69,18 @@ void terminal_putchar(char c)
     }
 }
 
-void terminal_writestring(const char* text)
+void write_terminal_string(const char* text)
 {
     size_t i = 0;
 
     while (text[i] != '\0') {
-        terminal_putchar(text[i]);
+        write_terminal_character(text[i]);
         i++;
     }
 }
 
-void kernel_main(void)
+void kernel_entry(void)
 {
-    terminal_initialize();
-    terminal_writestring("42\n");
+    initialize_terminal();
+    write_terminal_string("42\n");
 }

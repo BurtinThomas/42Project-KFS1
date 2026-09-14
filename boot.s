@@ -16,14 +16,14 @@
 stack_top:
 
 .section .text
-.global _start
+.global boot_entry
 
-_start:
+boot_entry:
     mov $stack_top, %esp
-    call kernel_main
+    call kernel_entry
 
     cli
 
-hang:
+halt_loop:
     hlt
-    jmp hang
+    jmp halt_loop
