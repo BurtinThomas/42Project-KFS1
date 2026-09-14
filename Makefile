@@ -1,62 +1,42 @@
-# Variables
-TOOLCHAIN ?= native
+CC := gcc
+AS := as
+LD := ld
+GRUB := grub2-mkrescue
 
-ifeq ($(TOOLCHAIN),native)
-CC=gcc
-AS=as
-LD=ld
-ASFLAGS=--32
-CFLAGS=-std=gnu99 -ffreestanding -O2 -Wall -Wextra -fno-builtin -fno-stack-protector -m32 -fno-pie
-LDFLAGS=-m elf_i386 -nostdlib
-LIBS=
-else
-CC=i386-elf-gcc
-AS=i386-elf-as
-LD=i386-elf-gcc
-ASFLAGS=
-CFLAGS=-std=gnu99 -ffreestanding -O2 -Wall -Wextra -fno-builtin -fno-stack-protector
-LDFLAGS=-ffreestanding -O2 -nostdlib
-LIBS=-lgcc
-endif
-ISO_DIR=isodir
-BOOT_DIR=$(ISO_DIR)/boot
-GRUB_DIR=$(BOOT_DIR)/grub
-GRUB_MKRESCUE ?= $(shell command -v grub-mkrescue 2>/dev/null || command -v grub2-mkrescue 2>/dev/null)
-GRUB_COMPRESS ?= xz
+CFLAGS := -std=gnu99 -ffreestanding -O2 -Wall -Wextra \
+	-fno-builtin -fno-stack-protector -m32 -fno-pie
+LDFLAGS := -m elf_i386 -nostdlib
+ASFLAGS := --32
 
-# Fichiers
-KERNEL_SRC=kernel.c
-BOOT_SRC=boot.s
-KERNEL_OBJ=kernel.o
-BOOT_OBJ=boot.o
-KERNEL_BIN=kfs.bin
-ISO=kfs.iso
-GRUB_CFG=grub.cfg
+ISO := kfs.iso
+KERNEL := kfs.bin
+ISO_ROOT := isodir
+GRUB_ROOT := $(ISO_ROOT)/boot/grub
 
-# Règle par défaut
+OBJECTS := boot.o kernel.o
+
+.PHONY: all clean re
+
 all: $(ISO)
 
-# Compilation
-$(BOOT_OBJ): $(BOOT_SRC)
-	$(AS) $(ASFLAGS) $(BOOT_SRC) -o $(BOOT_OBJ)
+boot.o: boot.s
+	$(AS) $(ASFLAGS) $< -o $@
 
-$(KERNEL_OBJ): $(KERNEL_SRC)
-	$(CC) -c $(KERNEL_SRC) -o $(KERNEL_OBJ) $(CFLAGS)
+kernel.o: kernel.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
-$(KERNEL_BIN): $(BOOT_OBJ) $(KERNEL_OBJ) linker.ld
-	$(LD) -T linker.ld -o $(KERNEL_BIN) $(LDFLAGS) $(BOOT_OBJ) $(KERNEL_OBJ) $(LIBS)
+$(KERNEL): $(OBJECTS) linker.ld
+	$(LD) $(LDFLAGS) -T linker.ld -o $@ $(OBJECTS)
 
-$(ISO): $(KERNEL_BIN) $(GRUB_CFG)
-	mkdir -p $(GRUB_DIR)
-	cp $(KERNEL_BIN) $(BOOT_DIR)/kfs.bin
-	cp $(GRUB_CFG) $(GRUB_DIR)/grub.cfg
-	$(GRUB_MKRESCUE) --compress=$(GRUB_COMPRESS) -o $(ISO) $(ISO_DIR)
-	rm -rf $(ISO_DIR)
+$(ISO): $(KERNEL) grub.cfg
+	mkdir -p $(GRUB_ROOT)
+	cp $(KERNEL) $(ISO_ROOT)/boot/kfs.bin
+	cp grub.cfg $(GRUB_ROOT)/grub.cfg
+	$(GRUB) -o $@ $(ISO_ROOT)
+	rm -rf $(ISO_ROOT)
 
-# Nettoyage
 clean:
-	rm -f *.o *.bin $(ISO)
-	rm -rf $(ISO_DIR)
+	rm -f $(OBJECTS) $(KERNEL) $(ISO)
+	rm -rf $(ISO_ROOT)
 
 re: clean all
-.PHONY: all clean
