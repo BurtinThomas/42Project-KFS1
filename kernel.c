@@ -79,7 +79,7 @@ void write_terminal_string(const char* text)
     }
 }
 
-void kernel_entry(void)
+void main(void)
 {
     initialize_terminal();
     write_terminal_string("42\n");

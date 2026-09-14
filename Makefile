@@ -4,7 +4,7 @@ LD := ld
 GRUB := grub2-mkrescue
 
 CFLAGS := -std=gnu99 -ffreestanding -O2 -Wall -Wextra \
-	-fno-builtin -fno-stack-protector -m32 -fno-pie
+	-fno-builtin -fno-stack-protector -m32 -fno-pie -nodefaultlibs
 LDFLAGS := -m elf_i386 -nostdlib
 ASFLAGS := --32
 

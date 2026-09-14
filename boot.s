@@ -20,7 +20,7 @@ stack_top:
 
 boot_entry:
     mov $stack_top, %esp
-    call kernel_entry
+    call main
 
     cli
 
